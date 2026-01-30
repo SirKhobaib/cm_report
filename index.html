@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>گزارش شناور (Cosmos Style)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            cyan: '#009bd9',   
+                            gold: '#c68e17',
+                            dark: '#0a0a0a',
+                            void: '#000000',
+                        }
+                    },
+                    transitionTimingFunction: {
+                        'cosmos': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 { letter-spacing: -0.03em; }
+        .tracking-ultra { letter-spacing: 0.3em; }
+
+        /* Smooth Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        /* --- COSMOS IMAGE ENGINE --- */
+        #visual-stage {
+            position: fixed;
+            top: 0;
+            left: 0; /* Images stay on Left */
+            width: 100%;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Desktop: Stage is strictly on the left 60% */
+        @media (min-width: 768px) {
+            #visual-stage {
+                width: 60%; 
+                left: 0;
+            }
+        }
+
+        .scene-group {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            will-change: opacity;
+        }
+        
+        .scene-group.active {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        /* Individual Floating Images */
+        .float-img {
+            position: absolute;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.9);
+            opacity: 0;
+            transform: translate3d(-40px, 40px, 0) scale(0.95) rotate(var(--r));
+            filter: blur(10px) brightness(0.5);
+            transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform, opacity, filter;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Animation when group is active */
+        .scene-group.active .float-img {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1) rotate(var(--r));
+            filter: blur(0) brightness(1);
+        }
+
+        /* Staggered delays for multiple images */
+        .float-img:nth-child(1) { transition-delay: 0.1s; }
+        .float-img:nth-child(2) { transition-delay: 0.2s; }
+        .float-img:nth-child(3) { transition-delay: 0.3s; }
+
+        /* Text Reveal Animation */
+        .reveal-text {
+            opacity: 0.1;
+            transform: translateY(20px);
+            filter: blur(4px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal-text.active {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+
+        /* Loader */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-gold selection:text-black">
+
+    <!-- Loading Screen -->
+    <div id="loader" class="loading-overlay">
+        <div class="flex flex-col items-center gap-4">
+            <div class="w-16 h-16 border-t-2 border-brand-cyan rounded-full animate-spin"></div>
+            <span class="text-xs font-mono text-gray-500 tracking-ultra uppercase">Loading Assets...</span>
+        </div>
+    </div>
+
+    <!-- Visual Stage (Background Images on LEFT) -->
+    <div id="visual-stage">
+        <!-- Default Group: Hero -->
+        <div id="group-hero" class="scene-group active">
+            <!-- Will be rendered by JS -->
+        </div>
+        <div id="group-quran" class="scene-group"></div>
+        <div id="group-intro" class="scene-group"></div>
+        <div id="group-lecture" class="scene-group"></div>
+        <div id="group-culture" class="scene-group"></div>
+        <div id="group-closing" class="scene-group"></div>
+        <div id="group-dua" class="scene-group"></div>
+    </div>
+
+    <!-- Scroll Content (Text on RIGHT) -->
+    <!-- md:ml-auto pushes the container to the RIGHT in LTR logic, but in RTL layout, margins behave physically. 
+         md:ml-auto means margin-left: auto => pushes away from left => aligns Right. -->
+    <div class="relative z-10 w-full md:w-[45%] md:ml-auto md:mr-0 bg-gradient-to-l from-black via-black/95 to-transparent min-h-screen border-r border-white/5">
+        <div class="max-w-md mx-auto px-8 py-20 space-y-[40vh]">
+            
+            <!-- SCENE 1: HERO -->
+            <section class="min-h-[60vh] flex flex-col justify-center snap-start" data-scene="hero">
+                <div class="reveal-text">
+                    <div class="w-28 h-28 mb-8 relative cursor-pointer group" onclick="handleLogoClick()">
+                         <div class="absolute inset-0 bg-brand-cyan/20 blur-2xl rounded-full group-hover:bg-brand-gold/20 transition-colors duration-700"></div>
+                         <img id="display-logo" src="E:\02 Work\02 DAWAH\Tahzib\Design\image-removebg-preview.png" class="relative z-10 w-full h-full object-contain drop-shadow-2xl">
+                    </div>
+                    
+                    <span class="text-brand-gold text-[15px] font-bold tracking-ultra uppercase mb-4 block">گزارش برگزاری</span>
+                    <h1 id="display-title" class="text-5xl md:text-3xl font-black text-white leading-[1.1] mb-8">
+                        <span class="md:text-5xl text-transparent bg-clip-text bg-gradient-to-bl from-brand-cyan to-white">کنفرانس آموزشی</span> <br>
+                        چگون بحران ها را به فرصت تبدیل کنیم؟
+                    </h1>
+                    <p id="display-sub" class="text-gray-400 font-light text-sm leading-relaxed border-r border-brand-gold pr-6">
+                        زون غرب - دهم دلو، ۱۴۰۴
+                    </p>
+                </div>
+            </section>
+
+            <!-- SCENE 2: QURAN -->
+            <section class="min-h-[50vh] flex flex-col justify-center snap-start" data-scene="quran">
+                <div class="reveal-text">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="w-1 h-8 bg-brand-cyan"></span>
+                        <h2 class="text-3xl font-bold text-white">تلاوت نور</h2>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-8 mb-8 text-justify pl-4">
+                        آغاز برنامه با طنین آیات الهی. لحظاتی سرشار از معنویت و آرامش برای شروعی پربرکت.
+                    </p>
+                    <div class="flex items-center gap-4 bg-white/5 p-4 rounded-xl backdrop-blur-sm border border-white/5 w-fit">
+                        <div class="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold">
+                            <i class="fas fa-quran"></i>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] text-gray-500 uppercase">قاری محترم</span>
+                            <span id="name-qari" class="text-lg font-bold text-white">خبیب جان جامی</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 3: INTRO -->
+            <section class="min-h-[50vh] flex flex-col justify-center snap-start" data-scene="intro">
+                <div class="reveal-text">
+                    <h2 class="text-3xl font-bold text-white mb-6">سخنان مقدماتی</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">
+                        بررسی اهداف و چشم‌اندازهای آینده موسسه توسط معاونت محترم.
+                    </p>
+                    <div class="inline-flex items-center gap-3 border-b border-brand-cyan pb-2">
+                         <span id="name-intro" class="text-xl font-bold text-white">عزیز جامی</span>
+                         <span class="text-xs text-brand-cyan bg-brand-cyan/10 px-2 py-1 rounded">معاونت زون</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 4: LECTURE -->
+            <section class="min-h-[50vh] flex flex-col justify-center snap-start" data-scene="lecture">
+                <div class="reveal-text">
+                    <span class="text-brand-gold text-xs font-bold tracking-widest uppercase mb-4 block opacity-70">Main Speech</span>
+                    <h2 id="name-lecturer" class="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">داکتر فرید احمد<br>حازم هروی</h2>
+                    <div class="relative pl-6 ml-2">
+                        <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-brand-cyan to-transparent"></div>
+                        <p class="text-white text-lg font-medium mb-2">موضوع: جایگاه تربیت</p>
+                        <p class="text-gray-500 text-sm">تحلیلی عمیق بر چالش‌های تربیتی عصر حاضر</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 5: CULTURE -->
+            <section class="min-h-[50vh] flex flex-col justify-center snap-start" data-scene="culture">
+                <div class="reveal-text">
+                    <div class="bg-gradient-to-br from-purple-900/40 to-black p-8 rounded-3xl border border-purple-500/20 shadow-2xl">
+                        <i class="fas fa-music text-3xl text-purple-400 mb-6"></i>
+                        <h3 class="text-2xl font-bold text-white mb-2">بخش فرهنگی</h3>
+                        <p class="text-xs text-gray-400 mb-6">اجرای سرود و همخوانی دانش‌آموزان</p>
+                        <span id="name-culture" class="text-xl font-bold text-purple-200 border-b border-purple-500/50 pb-1">خبیب جان جامی</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 6: CLOSING -->
+            <section class="min-h-[50vh] flex flex-col justify-center snap-start" data-scene="closing">
+                <div class="reveal-text">
+                    <div class="bg-gradient-to-br from-emerald-900/40 to-black p-8 rounded-3xl border border-emerald-500/20 shadow-2xl">
+                        <i class="fas fa-check-circle text-3xl text-emerald-400 mb-6"></i>
+                        <h3 class="text-2xl font-bold text-white mb-2">اختتامیه</h3>
+                        <p class="text-xs text-gray-400 mb-6">جمع‌بندی نهایی و تقدیر</p>
+                        <span id="name-closing" class="text-xl font-bold text-emerald-200 border-b border-emerald-500/50 pb-1">مجتبی جامی</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCENE 7: DUA & END -->
+            <section class="min-h-[80vh] flex flex-col justify-center snap-start pb-40" data-scene="dua">
+                <div class="reveal-text text-center">
+                    <div class="w-20 h-20 mx-auto bg-brand-gold/10 rounded-full flex items-center justify-center mb-6 text-brand-gold text-3xl animate-pulse">
+                        <i class="fas fa-hands-praying"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2">حسن ختام</h2>
+                    <span id="name-dua" class="text-2xl text-gray-300 font-serif block mb-12">محمد آصف جان احمدی</span>
+
+                    <button onclick="openGallery()" class="group relative inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white text-black font-bold overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] w-full md:w-auto">
+                        <span class="relative z-10">ورود به گالری تصاویر</span>
+                        <i class="fas fa-arrow-left relative z-10 group-hover:-translate-x-1 transition-transform"></i>
+                        <div class="absolute inset-0 bg-brand-cyan opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                    </button>
+                    
+                    <div class="mt-20 flex justify-center items-center gap-4 text-[10px] text-gray-700 uppercase tracking-widest font-mono">
+                        <span id="display-date">1404 / 06 / 14</span>
+                        <span>::</span>
+                        <span>CONF REPORT</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Gallery Modal -->
+    <div id="gallery-modal" class="fixed inset-0 z-[100] bg-black transform translate-y-full transition-transform duration-700 ease-in-out flex flex-col">
+        <div class="p-6 flex justify-between items-center bg-black/90 backdrop-blur-xl border-b border-white/10 z-10">
+            <h3 class="text-white font-bold text-lg tracking-widest uppercase text-brand-gold">Gallery Mode</h3>
+            <button onclick="closeGallery()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4" id="gallery-scroll-area">
+            <div id="gallery-grid" class="columns-2 md:columns-3 gap-4 space-y-4 pb-20">
+                <!-- Gallery items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Settings Panel -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-4 backdrop-blur-2xl">
+        <div class="bg-gray-900 border border-gray-800 w-full max-w-2xl max-h-[90vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                <div>
+                    <h2 class="text-brand-gold font-bold text-xl uppercase tracking-widest">پنل مدیریت</h2>
+                    <p class="text-xs text-gray-500 mt-1">تغییر متن، لوگو و تصاویر شناور</p>
+                </div>
+                <button onclick="toggleSettings()" class="text-gray-400 hover:text-white"><i class="fas fa-times text-2xl"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                
+                <!-- Logo & Text Inputs -->
+                <div class="space-y-4">
+                    <h3 class="text-white text-xs font-bold uppercase border-b border-gray-700 pb-2">اطلاعات پایه</h3>
+                    
+                    <div class="bg-black/30 p-4 rounded-xl border border-white/5 flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-circle-user text-brand-cyan text-xl"></i>
+                            <span class="text-sm text-white">تغییر لوگو</span>
+                        </div>
+                        <input type="file" accept="image/*" class="text-xs text-gray-400" onchange="uploadLogo(this)">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" id="in-title" placeholder="عنوان" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('display-title', this.value)">
+                        <input type="text" id="in-sub" placeholder="زیر عنوان" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('display-sub', this.value)">
+                        <input type="text" id="in-date" placeholder="تاریخ" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('display-date', this.value)">
+                        <!-- Names -->
+                        <input type="text" id="in-qari" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('name-qari', this.value)">
+                        <input type="text" id="in-intro" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('name-intro', this.value)">
+                        <input type="text" id="in-lecturer" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('name-lecturer', this.value)">
+                        <input type="text" id="in-culture" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('name-culture', this.value)">
+                        <input type="text" id="in-closing" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('name-closing', this.value)">
+                        <input type="text" id="in-dua" class="bg-black/50 text-white p-3 rounded-lg border border-gray-700 text-sm" oninput="updateText('name-dua', this.value)">
+                    </div>
+                </div>
+
+                <!-- Image Inputs (Multi Support) -->
+                <div class="space-y-4">
+                    <h3 class="text-brand-cyan text-xs font-bold uppercase border-b border-gray-700 pb-2">تصاویر شناور (چند انتخابی)</h3>
+                    <p class="text-xs text-gray-500 mb-2">می‌توانید برای هر بخش چندین عکس انتخاب کنید تا در سمت چپ نمایش داده شوند.</p>
+                    <div class="space-y-3">
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-brand-gold font-bold">۱. کاور اصلی (Hero)</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('hero', this)">
+                            <i class="fas fa-plus-circle text-brand-cyan text-xl"></i>
+                        </label>
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-gray-300">۲. بخش تلاوت</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('quran', this)">
+                            <i class="fas fa-images text-gray-500"></i>
+                        </label>
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-gray-300">۳. بخش مقدمه</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('intro', this)">
+                            <i class="fas fa-images text-gray-500"></i>
+                        </label>
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-gray-300">۴. بخش سخنرانی</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('lecture', this)">
+                            <i class="fas fa-images text-gray-500"></i>
+                        </label>
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-gray-300">۵. بخش فرهنگی</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('culture', this)">
+                            <i class="fas fa-images text-gray-500"></i>
+                        </label>
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-gray-300">۶. بخش اختتامیه</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('closing', this)">
+                            <i class="fas fa-images text-gray-500"></i>
+                        </label>
+                        <label class="flex justify-between bg-black/30 p-4 rounded-xl cursor-pointer hover:bg-white/5 border border-white/5">
+                            <span class="text-sm text-gray-300">۷. دعائیه</span>
+                            <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGroup('dua', this)">
+                            <i class="fas fa-images text-gray-500"></i>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Gallery Input -->
+                <div class="bg-brand-gold/5 border border-brand-gold/20 border-dashed rounded-xl p-8 text-center mt-6">
+                    <label class="cursor-pointer block">
+                        <i class="fas fa-photo-film text-3xl text-brand-gold mb-3"></i>
+                        <span class="block text-sm text-white font-bold mb-1">گالری نهایی</span>
+                        <span class="block text-xs text-gray-500">انتخاب تمام عکس‌های اضافی برای انتهای گزارش</span>
+                        <input type="file" multiple accept="image/*" class="hidden" onchange="uploadGallery(this)">
+                    </label>
+                </div>
+            </div>
+            <div class="p-4 bg-black border-t border-gray-800">
+                <button onclick="toggleSettings()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition">ذخیره و بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Initialization ---
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').remove(), 600);
+            }, 1000);
+            
+            // Set default placeholders for all groups if empty
+            initDefaultImages();
+            
+            // Initial scroll check
+            handleScroll();
+        };
+
+        function initDefaultImages() {
+            const defaults = {
+                'hero': ['E:/02Work/02DAWAH/Tahzib/crisis_management/Design/report_images/hero.jpg'],
+                'quran': ['https://placehold.co/600x900/1a1a1a/444?text=Quran+1', 'https://placehold.co/500x700/222/555?text=Quran+2'],
+                'intro': ['https://placehold.co/600x800/2a2a2a/555?text=Intro+1'],
+                'lecture': ['https://placehold.co/600x900/0a0a0a/333?text=Lecture+1', 'https://placehold.co/500x700/111/444?text=Lecture+2'],
+                'culture': ['https://placehold.co/600x800/111/444?text=Culture+1'],
+                'closing': ['https://placehold.co/600x800/222/555?text=Closing+1'],
+                'dua': ['https://placehold.co/600x900/000/333?text=Dua+1']
+            };
+            
+            for (const [key, urls] of Object.entries(defaults)) {
+                renderGroupImages(key, urls);
+            }
+        }
+
+        // --- Logic: Scroll & Reveal ---
+        let currentScene = 'hero';
+        
+        const observerOptions = {
+            root: null,
+            rootMargin: '-40% 0px -40% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const sceneId = entry.target.getAttribute('data-scene');
+                    
+                    // Activate Text
+                    const textReveal = entry.target.querySelector('.reveal-text');
+                    if(textReveal) textReveal.classList.add('active');
+
+                    // Activate Scene Group (Images)
+                    if (sceneId !== currentScene) {
+                        document.querySelectorAll('.scene-group').forEach(el => el.classList.remove('active'));
+                        const targetGroup = document.getElementById(`group-${sceneId}`);
+                        if(targetGroup) targetGroup.classList.add('active');
+                        currentScene = sceneId;
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        function handleScroll() { /* Fallback */ }
+        window.addEventListener('scroll', handleScroll);
+
+        // --- Settings Logic ---
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) syncInputs();
+        }
+
+        function syncInputs() {
+             document.getElementById('in-title').value = document.getElementById('display-title').innerText.replace(/\n/g, ' ');
+             document.getElementById('in-sub').value = document.getElementById('display-sub').innerText.replace(/\n/g, ' ');
+             document.getElementById('in-date').value = document.getElementById('display-date').innerText;
+             document.getElementById('in-qari').value = document.getElementById('name-qari').innerText;
+             document.getElementById('in-intro').value = document.getElementById('name-intro').innerText;
+             document.getElementById('in-lecturer').value = document.getElementById('name-lecturer').innerText;
+             document.getElementById('in-culture').value = document.getElementById('name-culture').innerText;
+             document.getElementById('in-closing').value = document.getElementById('name-closing').innerText;
+             document.getElementById('in-dua').value = document.getElementById('name-dua').innerText;
+        }
+
+        // --- Logo Upload ---
+        function uploadLogo(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('display-logo').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- Image Group Logic (The "Cosmos" Engine) ---
+        function uploadGroup(sceneKey, input) {
+            if (input.files && input.files.length > 0) {
+                const files = Array.from(input.files);
+                const urls = [];
+                let loaded = 0;
+
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        urls.push(e.target.result);
+                        loaded++;
+                        if (loaded === files.length) {
+                            renderGroupImages(sceneKey, urls);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        function renderGroupImages(key, urls) {
+            const container = document.getElementById(`group-${key}`);
+            if (!container) return;
+            
+            container.innerHTML = ''; // Clear existing
+            
+            // Organized angles to avoid mess
+            const angles = [-5, 5, -3, 3]; 
+            
+            urls.forEach((url, index) => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'float-img';
+                
+                // Bigger and Tider Images
+                // rTop: spread vertically but kept centered around interest points
+                // rLeft: Keep mostly to left side since Text is on Right
+                
+                const rTop = 15 + (index * 12); // Staggered vertical
+                const rLeft = 5 + ((index % 3) * 10); // Staggered horizontal (5%, 15%, 25%)
+                
+                // Larger Size: 50% to 75% width relative to container
+                const rWidth = 60 + (index % 2 * 15); 
+                
+                // Controlled Rotation
+                const rRot = angles[index % angles.length];
+                
+                // Override for single image (Hero)
+                if (urls.length === 1) {
+                     img.style.cssText = `top: 15%; left: 10%; width: 80%; --r: -2deg; max-height: 85vh;`;
+                } else {
+                     img.style.cssText = `top: ${rTop}%; left: ${rLeft}%; width: ${rWidth}%; --r: ${rRot}deg; z-index: ${index};`;
+                }
+                
+                container.appendChild(img);
+            });
+        }
+
+        // --- Text & General Editing ---
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'M' || e.key === 'ئ')) {
+                e.preventDefault();
+                toggleSettings();
+            }
+        });
+
+        let tapCount = 0;
+        let tapTimer;
+        function handleLogoClick() {
+            tapCount++;
+            if(tapCount === 3) {
+                toggleSettings();
+                tapCount = 0;
+            } else {
+                clearTimeout(tapTimer);
+                tapTimer = setTimeout(() => tapCount = 0, 500);
+            }
+        }
+
+        function updateText(id, val) {
+            const el = document.getElementById(id);
+            if(id === 'display-title') {
+                el.innerHTML = val.replace(' ', '<br><span class="text-transparent bg-clip-text bg-gradient-to-bl from-brand-cyan to-white">') + '</span>';
+            } else if(id === 'display-sub') {
+                el.innerHTML = val.replace('\n', '<br>');
+            } else {
+                el.innerText = val;
+            }
+        }
+
+        // --- Gallery ---
+        let galleryImages = [];
+        function uploadGallery(input) {
+            if (input.files && input.files.length > 0) {
+                galleryImages = [];
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => galleryImages.push(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                alert("تصاویر گالری بروز شد (" + input.files.length + " عکس)");
+            }
+        }
+
+        function openGallery() {
+            const modal = document.getElementById('gallery-modal');
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = '';
+            
+            const imagesToShow = galleryImages.length > 0 ? galleryImages : [
+                'https://placehold.co/600x800/111/333?text=Gallery+1',
+                'https://placehold.co/600x400/222/444?text=Gallery+2',
+                'https://placehold.co/600x900/333/555?text=Gallery+3'
+            ];
+
+            imagesToShow.forEach((src) => {
+                grid.innerHTML += `<div class="break-inside-avoid mb-4 rounded-xl overflow-hidden"><img src="${src}" class="w-full hover:scale-110 transition duration-700"></div>`;
+            });
+            modal.classList.remove('translate-y-full');
+        }
+
+        function closeGallery() {
+            document.getElementById('gallery-modal').classList.add('translate-y-full');
+        }
+
+    </script>
+</body>
+</html>
