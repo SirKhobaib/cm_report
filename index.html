@@ -406,14 +406,19 @@
 
         function initDefaultImages() {
             const defaults = {
-                'hero': ['E:/02Work/02DAWAH/Tahzib/crisis_management/Design/report_images/hero.jpg'],
-                'quran': ['https://placehold.co/600x900/1a1a1a/444?text=Quran+1', 'https://placehold.co/500x700/222/555?text=Quran+2'],
-                'intro': ['https://placehold.co/600x800/2a2a2a/555?text=Intro+1'],
-                'lecture': ['https://placehold.co/600x900/0a0a0a/333?text=Lecture+1', 'https://placehold.co/500x700/111/444?text=Lecture+2'],
-                'culture': ['https://placehold.co/600x800/111/444?text=Culture+1'],
-                'closing': ['https://placehold.co/600x800/222/555?text=Closing+1'],
-                'dua': ['https://placehold.co/600x900/000/333?text=Dua+1']
-            };
+                    'hero': ['report_images/hero.jpg'],
+                        'quran': ['report_images/quran.jpg'],
+                        'intro': ['report_images/deputy.jpg'], 
+                        'lecture': [
+                            'report_images/professor_talk.jpg',
+                            'report_images/professor_talk1.jpg',
+                            'report_images/professor_talk2.jpg',
+                            'report_images/professor_talk3.jpg'
+                        ],
+                        'culture': ['report_images/reciter.jpg'],
+                        'closing': ['report_images/professor_talk3.jpg'], // می‌توانید از یکی از عکس‌های سخنرانی استفاده کنید
+                        'dua': ['report_images/reciter.jpg'] // یا هر عکس دیگری که ترجیح می‌دهید
+                                };
             
             for (const [key, urls] of Object.entries(defaults)) {
                 renderGroupImages(key, urls);
@@ -614,4 +619,5 @@
 
     </script>
 </body>
+
 </html>
